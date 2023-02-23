@@ -1,0 +1,15 @@
+{
+    "name": "Adrenak.CsvUtility.Samples",
+    "references": [
+        "GUID:d8c7e24793a7b6b4683f56caad5c3a6a"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
