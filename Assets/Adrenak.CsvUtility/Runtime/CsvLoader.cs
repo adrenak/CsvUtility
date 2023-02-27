@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Text;
 
 namespace Adrenak.CsvUtility {
     /// <summary>
@@ -43,54 +43,59 @@ namespace Adrenak.CsvUtility {
         }
 
         /// <summary>
-        /// Initializes the internal data object
-        /// with a given object
-        /// </summary>
-        /// <param name="cells"></param>
-        public void SetCells(string[][] cells) {
-            this.cells = cells;
-        }
-
-        /// <summary>
         /// Takes a CSV in string form and 
         /// initializes the internal data
         /// </summary>
-        /// <param name="contents"></param>
-        public void LoadFromFileText(string contents) {
-            var rows = contents.Split('\n');
-            LoadFromRows(rows);
-        }
+        /// <param name="csv"></param>
+        public CsvLoader(string csv) {
+            List<string[]> rows = new List<string[]>();
+            List<string> currentRow = new List<string>();
+            bool insideQuotes = false;
+            StringBuilder fieldBuilder = new StringBuilder();
 
-        /// <summary>
-        /// Reads a given CSV file and initializes
-        /// the internal data 
-        /// </summary>
-        /// <param name="filePath"></param>
-        public void LoadFromFile(string filePath) {
-            var rows = File.ReadAllLines(filePath);
-            LoadFromRows(rows);
-        }
+            for (int i = 0; i < csv.Length; i++) {
+                char currentChar = csv[i];
 
-        /// <summary>
-        /// Initializes the internal data using 
-        /// CSV rows
-        /// </summary>
-        /// <param name="rows"></param>
-        public void LoadFromRows(string[] rows) {
-            List<string> nonEmptyRows = new List<string>();
-            for (int i = 0; i < rows.Length; i++)
-                if (!string.IsNullOrEmpty(rows[i]))
-                    nonEmptyRows.Add(rows[i]);
-
-            cells = new string[nonEmptyRows.Count][];
-            string[] splits;
-            for (int i = 0; i < nonEmptyRows.Count; i++) {
-                splits = rows[i].Split(',');
-                for (int j = 0; j < splits.Length; j++)
-                    splits[j] = splits[j].Trim();
-                cells[i] = splits;
-
+                if (currentChar == '\"') {
+                    insideQuotes = !insideQuotes;
+                    // If we encounter two consecutive double quotes, treat it as an escaped quote
+                    if (i < csv.Length - 1 && csv[i + 1] == '\"') {
+                        fieldBuilder.Append('\"');
+                        i++;
+                    }
+                }
+                else if (currentChar == ',' && !insideQuotes) {
+                    currentRow.Add(fieldBuilder.ToString());
+                    fieldBuilder.Clear();
+                }
+                else if (currentChar == '\n' && !insideQuotes) {
+                    currentRow.Add(fieldBuilder.ToString());
+                    fieldBuilder.Clear();
+                    rows.Add(currentRow.ToArray());
+                    currentRow.Clear();
+                }
+                else if (currentChar == '\r') {
+                    continue;
+                }
+                else {
+                    fieldBuilder.Append(currentChar);
+                }
             }
+
+            if (insideQuotes) {
+                throw new ArgumentException("Mismatched quotes in CSV string");
+            }
+
+            if (fieldBuilder.Length > 0) {
+                currentRow.Add(fieldBuilder.ToString());
+            }
+
+            if (currentRow.Count > 0) {
+                rows.Add(currentRow.ToArray());
+            }
+            cells = new string[rows.Count][];
+            for (int i = 0; i < rows.Count; i++)
+                cells[i] = rows[i];
         }
 
         /// <summary>
@@ -160,6 +165,5 @@ namespace Adrenak.CsvUtility {
         public void Dispose() {
             cells = null;
         }
-
     }
 }

@@ -8,12 +8,10 @@ namespace Adrenak.CsvUtility.Samples {
             var csvAsset = Resources.Load<TextAsset>("player_data_horizontal");
         
             // Create a loader
-            var loader = new CsvLoader();
-            loader.LoadFromFileText(csvAsset.text);
+            var loader = new CsvLoader(csvAsset.text);
             
             // Create a reader
-            var reader = new CsvReader<Player>();
-            reader.LoadFromMatrix(loader, DataOrder.AlongRow);
+            var reader = new CsvReader<Player>(loader, DataOrder.AlongRow);
 
             // Print some stuff
             Debug.Log("CSV Schema : " + string.Join(", ", reader.Schema));
