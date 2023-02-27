@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Reflection;
+using System.Collections.Generic;
 
 namespace Adrenak.CsvUtility {
     /// <summary>
@@ -29,7 +30,32 @@ namespace Adrenak.CsvUtility {
             }
         }
 
+        /// <summary>
+        /// Whether the instance should cache record fetches.
+        /// </summary>
+        public bool UseCache { get; set; }
+
+        /// <summary>
+        /// Clears the records in the cache
+        /// </summary>
+        public void ClearCache() {
+            cache.Clear();
+        }
+
+        /// <summary>
+        /// Adds a record to the cache at a given index
+        /// </summary>
+        /// <param name="index">The index to cache at</param>
+        /// <param name="record">The record to cache</param>
+        public void CacheRecord(int index, TRecord record) {
+            if (!cache.ContainsKey(index))
+                cache.Add(index, record);
+            else
+                cache[index] = record;
+        }
+
         CsvLoader CsvMatrix;
+        readonly Dictionary<int, TRecord> cache = new Dictionary<int, TRecord>();
 
         /// <summary>
         /// Loads data from a <see cref="CsvMatrix"/> with a <see cref="DataOrder"/>
@@ -63,8 +89,16 @@ namespace Adrenak.CsvUtility {
         /// <param name="recordIndex">The index of the record to be fetched</param>
         /// <returns></returns>
         public TRecord GetRecord(int recordIndex) {
+            // Try to return from cache first
+            if (UseCache && cache.ContainsKey(recordIndex))
+                return cache[recordIndex];
+
             var cells = GetRecordCells(recordIndex);
-            return DeserializeRecord(cells);
+            var record = DeserializeRecord(cells);
+
+            if (UseCache)
+                CacheRecord(recordIndex, record);
+            return record;
         }
 
         /// <summary>
