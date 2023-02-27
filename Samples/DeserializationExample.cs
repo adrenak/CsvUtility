@@ -9,7 +9,7 @@ namespace Adrenak.CsvUtility.Samples {
         
             // Create a loader
             var loader = new CsvLoader();
-            loader.LoadFromCsvText(csvAsset.text);
+            loader.LoadFromFileText(csvAsset.text);
             
             // Create a reader
             var reader = new CsvReader<Player>();
