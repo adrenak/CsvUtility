@@ -24,9 +24,9 @@ namespace Adrenak.CsvUtility {
         /// </summary>
         public int RecordCount {
             get {
-                if (CsvMatrix == null) return 0;
+                if (loader == null) return 0;
                 var horizontal = RecordDataOrder == DataOrder.AlongRow;
-                return (horizontal ? CsvMatrix.RowCount : CsvMatrix.ColumnCount) - 1;
+                return (horizontal ? loader.RowCount : loader.ColumnCount) - 1;
             }
         }
 
@@ -54,21 +54,24 @@ namespace Adrenak.CsvUtility {
                 cache[index] = record;
         }
 
-        CsvLoader CsvMatrix;
+        CsvLoader loader;
         readonly Dictionary<int, TRecord> cache = new Dictionary<int, TRecord>();
 
         /// <summary>
-        /// Loads data from a <see cref="CsvMatrix"/> with a <see cref="DataOrder"/>
+        /// Constructs a reader with a given loader, record data order and caching flag
         /// </summary>
-        /// <param name="matrix">The matrix that contains the CSV data</param>
-        /// <param name="dataOrder">The direction of record data</param>
-        public void LoadFromMatrix(CsvLoader matrix, DataOrder dataOrder) {
-            RecordDataOrder = dataOrder;
-            CsvMatrix = matrix;
+        /// <param name="loader">The loader to read CSV cells from</param>
+        /// <param name="recordDataOrder">The data order of the CSV file</param>
+        /// <param name="useCache">Whether the reader should cache read records</param>
+        public CsvReader(CsvLoader loader, DataOrder recordDataOrder, bool useCache = true) {
+            RecordDataOrder = recordDataOrder;
+            UseCache = useCache;
+            this.loader = loader;
+
             ReadSchema();
-            for(int i = 0; i < Schema.Length; i++) {
-                if(string.IsNullOrEmpty(Schema[i]))
-                    throw new Exception($"The first {(dataOrder == DataOrder.AlongColumn ? " row " : " column ")} " +
+            for (int i = 0; i < Schema.Length; i++) {
+                if (string.IsNullOrEmpty(Schema[i]))
+                    throw new Exception($"The first {(recordDataOrder == DataOrder.AlongColumn ? " row " : " column ")} " +
                     $"which describes the schema should not contain any empty cells");
             }
         }
@@ -80,7 +83,7 @@ namespace Adrenak.CsvUtility {
         /// <returns></returns>
         public string[] GetRecordCells(int recordIndex) {
             var horizontal = RecordDataOrder == DataOrder.AlongRow;
-            return horizontal ? CsvMatrix.GetRow(recordIndex + 1) : CsvMatrix.GetColumn(recordIndex + 1);
+            return horizontal ? loader.GetRow(recordIndex + 1) : loader.GetColumn(recordIndex + 1);
         }
 
         /// <summary>
@@ -131,10 +134,10 @@ namespace Adrenak.CsvUtility {
         /// </summary>
         void ReadSchema() {
             var horizontal = RecordDataOrder == DataOrder.AlongRow;
-            Schema = new string[horizontal ? CsvMatrix.ColumnCount : CsvMatrix.RowCount];
+            Schema = new string[horizontal ? loader.ColumnCount : loader.RowCount];
 
             for (int i = 0; i < Schema.Length; i++)
-                Schema[i] = horizontal ? CsvMatrix.GetCell(0, i) : CsvMatrix.GetCell(i, 0);
+                Schema[i] = horizontal ? loader.GetCell(0, i) : loader.GetCell(i, 0);
         }
 
         /// <summary>
@@ -160,8 +163,6 @@ namespace Adrenak.CsvUtility {
                 var schemaName = csvAtt.name;
 
                 var value = cells[Array.IndexOf(Schema, schemaName)];
-                if (value.StartsWith("\""))
-                    value = value.Substring(1, value.Length - 3);
 
                 // We parse the string value to the right types
                 // if the string is empty or null, we set to default value
@@ -201,7 +202,7 @@ namespace Adrenak.CsvUtility {
         /// internal CSV data matrix and the CSV schema
         /// </summary>
         public void Dispose() {
-            CsvMatrix.Dispose();
+            loader.Dispose();
             Schema = null;
         }
     }
